@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['amoxicillin', 'chaitea', 'edwardsun', 'josiewang', 'leanntai']
+
+roboflow:
+  workspace: ucla-jmuvm
+  project: hackprinceton
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/ucla-jmuvm/hackprinceton/dataset/2
