@@ -24,6 +24,7 @@ def generate_and_send_info(query, dbr):
     TTS.generate_eleven_speech(story)
 
 cap = cv2.VideoCapture(2)
+
 while True:
     ret, frame = cap.read()
     if not ret:

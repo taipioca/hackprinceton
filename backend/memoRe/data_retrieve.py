@@ -38,7 +38,7 @@ class DataRetriever:
         system_prompt = f"""{EMPATH_TONE}\nYou are an assistant designed to help dementia patients recall memories. 
                            When provided with a {memory_type}'s name , along with related memory fragments,
                            your task is to create a cohesive story from these fragments.
-                           This story should help the patient remember details about the {memory_type}."""
+                           This story should help the patient remember details about the {memory_type}. Be concise and limit your story to around 4 sentances or so."""
 
         prompt = f"The name of the {memory_type} is: {query}\n\nHere are the memory fragments:\n"
         for memory in all_memories:
