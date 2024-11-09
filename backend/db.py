@@ -42,6 +42,22 @@ def init_db():
     conn.commit()
     conn.close()
 
+@app.route('/change_class', methods=['POST'])
+def change_class():
+    global last_class  # Declare last_class as a global variable
+    try:
+        # Get the new class from the request payload
+        new_class = request.json.get("class")
+        
+        # Update the global last_class
+        last_class = new_class
+        
+        return jsonify({"status": "success", "message": f"Object detected: {last_class}"}), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Failed to change class"}), 400
+    
+
 # Endpoint for image detection
 @app.route('/detect', methods=['POST'])
 def detect():
