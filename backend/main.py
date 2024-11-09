@@ -1,10 +1,12 @@
-from ultralytics import YOLO
+from memoRe import *
 
-# Load a pre-trained YOLOv10n model
-model = YOLO("yolov10n.pt")
+# from ultralytics import YOLO
 
-# Perform object detection on an image
-results = model("images.jpeg")
+# # Load a pre-trained YOLOv10n model
+# model = YOLO("yolov10n.pt")
 
-# Display the results
-results[0].show()
+# # Perform object detection on an image
+# results = model("images.jpeg")
+
+# # Display the results
+# results[0].show()
