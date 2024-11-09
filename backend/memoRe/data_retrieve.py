@@ -26,6 +26,9 @@ class DataRetriever:
             }
 
         response = requests.get(url, params=params)
+        response = response.json()
+
+        print(response)
 
         name = "" 
         all_memories = response["memories"]
@@ -49,10 +52,9 @@ class DataRetriever:
             print("------RETRIEVED INFO------")
             print(f"All retrieved memory fragments for {query}:", str(all_memories))
             print(f"Generated story {query}:", generated_story)
-
+        
         return generated_story, all_img_base64
 
 if __name__ == "__main__":
     dr = DataRetriever(debug=True)
-    dr.update_database()
-    dr.retrieve_memory("edwardsun")
+    dr.retrieve_memory("Leann")
