@@ -1,0 +1,11 @@
+{
+  "type": "person",
+  "name": "Joe",
+  "memories": [
+    "memory-description1",
+    "memory-description2",
+    "memory-description3",
+    "memory-description4"
+  ],
+  "images": ["memory1.png", "memory2.png", "memory3.png"]
+}

@@ -1,4 +1,4 @@
-import { MemoryApp } from "@/components/memory-app";
+import MemoryApp from "../../pages/MemoryApp";
 import React from "react";
 
 const page = () => {
