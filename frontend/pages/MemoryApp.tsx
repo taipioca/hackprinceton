@@ -55,6 +55,7 @@ const MemoryApp: React.FC = () => {
 
       {/* Modals */}
       <div className="flex justify-between">
+        <UpdateModal />
         <UploadModal />
       </div>
 

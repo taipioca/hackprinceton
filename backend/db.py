@@ -124,57 +124,58 @@ def dump_memory():
 
 from flask_cors import cross_origin
 
-@app.route('/edit_memory/<int:memory_id>', methods=['PATCH'])
-@cross_origin()  # Allow CORS for this specific route
-def edit_memory(memory_id):
-    # Extract the new data from the form
-    name = request.form.get('name')
-    memories = request.form.getlist('memories')  # Handle the list of memories from dynamic textboxes
-    memories_str = '|'.join(memories) if memories else None  # Concatenate memories list for storage
-
-    # Encode new images to Base64 if provided
-    encoded_images = []
-    images = request.files.getlist('images')
-    for image in images:
-        if image:
-            image_stream = image.read()
-            encoded_image = base64.b64encode(image_stream).decode('utf-8')
-            encoded_images.append(encoded_image)
-
-    images_str = '|'.join(encoded_images) if encoded_images else None
-
-    # Query to find the memory
+@app.route('/edit_memory/<name>', methods=['PATCH'])
+def edit_memory(name):
     conn = sqlite3.connect('memories.db')
-    c = conn.cursor()
-    c.execute('SELECT memories, images FROM memories WHERE id = ?', (memory_id,))
-    row = c.fetchone()
+    cursor = conn.cursor()
 
-    if row:
-        current_memories, current_images = row
-        # Combine current memories with the new ones, avoid empty additions
-        updated_memories = current_memories
-        if memories_str:
-            updated_memories = current_memories + '|' + memories_str if current_memories else memories_str
+    # Retrieve the current memory data by name
+    cursor.execute("SELECT * FROM memories WHERE name = ?", (name,))
+    memory = cursor.fetchone()
 
-        # Combine current images with the new ones, avoid empty additions
-        updated_images = current_images
-        if images_str:
-            updated_images = current_images + '|' + images_str if current_images else images_str
+    if not memory:
+        return jsonify({"error": "Memory not found"}), 404
 
-        # Update the memory in the database
-        c.execute(''' 
-            UPDATE memories 
-            SET name = ?, memories = ?, images = ?
-            WHERE id = ?
-        ''', (name, updated_memories, updated_images, memory_id))
-        conn.commit()
-        conn.close()
+    # Parse the existing data
+    memory_id, current_name, current_object_type, current_memories, current_images = memory
 
-        return jsonify({"status": "success", "message": "Memory updated successfully!"}), 200
-    else:
-        conn.close()
-        return jsonify({"status": "error", "message": "Memory not found"}), 404
+    # Get the new data from the request
+    data = request.form
 
+    # Handle the new memories (split by | when updating)
+    new_memories = data.get('memories')
+    if new_memories:
+        # Split the memories string into a list by '|'
+        new_memories = new_memories.split('|')
+
+    # Handle the new images
+    new_images = request.files.getlist('images')
+
+    # Decode the existing images (Base64) from the database into a list
+    existing_images = current_images.split('|') if current_images else []
+
+    # Update the images (replacing old ones) and base64 encode them
+    updated_images = existing_images  # start with existing images
+    if new_images:
+        for image in new_images:
+            image_data = image.read()
+            encoded_image = base64.b64encode(image_data).decode('utf-8')
+            updated_images.append(encoded_image)
+
+    # Prepare the updated data
+    updated_memories = new_memories if new_memories else current_memories
+
+    # Update the database with new data
+    cursor.execute('''
+        UPDATE memories
+        SET object_type = ?, memories = ?, images = ?
+        WHERE name = ?
+    ''', (data.get('object_type', current_object_type), '|'.join(updated_memories), '|'.join(updated_images), name))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Memory updated successfully"}), 200
 
 
 if __name__ == '__main__':

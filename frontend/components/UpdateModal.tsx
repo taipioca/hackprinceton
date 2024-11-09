@@ -35,25 +35,27 @@ const UpdateModal: React.FC = () => {
   }, [selectedFile]);
 
   const handleSubmit = () => {
-    console.log(data)
-    // if (!data || !data.id) {
-    //   alert("No data to update");
-    //   return;
-    // }
+    if (!data) {
+      alert("No data to update");
+      return;
+    }
   
     // Create FormData to handle both JSON data and images
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("object_type", data.object_type);
-    formData.append("memories", JSON.stringify(data.memories)); // Send memories array
-  
+    
+    // Join memories with '|' separator
+    const memoriesString = data.memories.join("|");
+    formData.append("memories", memoriesString); // Send joined memories string
+    
     // Append the selected image files to the form data
     imageFiles.forEach((file) => {
       formData.append("images", file);
     });
   
-    // Send PATCH request with memory_id
-    fetch(`http://127.0.0.1:5000/edit_memory/${data.id}`, {  // Pass the memory_id in the URL
+    // Send PATCH request with memory name
+    fetch(`http://127.0.0.1:5000/edit_memory/${data.name}`, { 
       method: "PATCH", 
       body: formData,
     })
