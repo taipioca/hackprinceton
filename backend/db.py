@@ -5,6 +5,12 @@ from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 import json
+from memoRe import *
+import cv2
+from ultralytics import YOLO
+import json
+import requests
+import threading
 
 # Set up Flask app
 app = Flask(__name__)
@@ -176,6 +182,74 @@ def edit_memory(name):
     conn.close()
 
     return jsonify({"message": "Memory updated successfully"}), 200
+
+
+# Global variable to store the last detected class
+last_class = None
+
+@app.route('/image_recognition/get_memory', methods=['GET'])
+def get_memory():
+    # If no object is detected, return a message
+    if not last_class:
+        return jsonify({"status": "detecting", "message": "No object detected"}), 200
+
+    # Query database for the memory using the detected object class name
+    name = last_class
+
+    conn = sqlite3.connect('memories.db')
+    c = conn.cursor()
+    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (name,))
+    row = c.fetchone()
+    conn.close()
+
+    if row:
+        name, object_type, memories_str, images_str = row
+        memories = memories_str.split('|')
+        images = images_str.split('|')
+        return jsonify({
+            "name": name,
+            "object_type": object_type,
+            "memories": memories,
+            "images": images  # Images are now Base64 encoded strings
+        }), 200
+    else:
+        return jsonify({"status": "error", "message": "Memory not found"}), 404
+
+# Add the object detection logic that sets last_class
+model = YOLO('memoRe/best.pt') 
+DETECT_THRESHOLD = 0.8
+last_class = None  # Variable to store the last detected class
+
+cap = cv2.VideoCapture(2)
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    results = model(frame)
+
+    annotated_frame = results[0].plot()
+
+    for result in results:
+        boxes = result.boxes
+        for box in boxes:
+            class_id = int(box.cls[0])
+            class_name = result.names[class_id]
+            confidence = float(box.conf[0])
+
+            if confidence >= DETECT_THRESHOLD:
+                last_class = class_name  # Update the detected object class
+
+    # Display the annotated frame
+    cv2.imshow("YOLOv10 Inference", annotated_frame)
+
+    # Break the loop if 'q' is pressed
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+# Release the webcam and close windows
+cap.release()
+cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
