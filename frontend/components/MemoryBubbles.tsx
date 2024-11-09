@@ -5,11 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
 interface Props {
-  memories: string[];
-  images: string[];
+  images: string[]; // Only images are required, memories are ignored
 }
 
-export default function MemoryBubbles({ memories, images }: Props) {
+export default function MemoryBubbles({ images }: Props) {
   const [selectedMemory, setSelectedMemory] = useState<number | null>(null);
   const [bubbleStyles, setBubbleStyles] = useState<
     { top: number; left: number; size: number; hue: number }[]
@@ -49,7 +48,7 @@ export default function MemoryBubbles({ memories, images }: Props) {
             onClick={() => setSelectedMemory(idx)}
           >
             <img
-              src={img}
+              src={`data:image/jpeg;base64,${img}`} // Decode the base64 image string
               alt={`Memory ${idx}`}
               className="w-full h-full object-cover mix-blend-overlay"
             />
@@ -71,13 +70,10 @@ export default function MemoryBubbles({ memories, images }: Props) {
               <X size={24} />
             </button>
             <img
-              src={images[selectedMemory]}
+              src={`data:image/jpeg;base64,${images[selectedMemory]}`} // Decode the selected image base64 string
               alt="Selected Memory"
               className="w-80 h-80 object-cover rounded-lg shadow-md mb-6"
             />
-            <p className="text-center text-gray-800 text-lg">
-              {memories[selectedMemory]}
-            </p>
           </motion.div>
         )}
       </AnimatePresence>
