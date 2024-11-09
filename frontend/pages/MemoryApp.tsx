@@ -113,13 +113,7 @@ const MemoryApp: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data ? (
           data.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-            >
-              {/* <h3 className="text-xl font-semibold mb-4">{item.name}</h3>
-              <p className="text-sm text-gray-600 mb-4">{item.object_type}</p>
-              <MemoryBubbles memories={item.memories} images={item.images} /> */}
+            <div key={index}>
               <DisplayPanel data={item} />
             </div>
           ))
