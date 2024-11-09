@@ -1,0 +1,42 @@
+{
+    "data/car.jpg": {
+        "image_path": "data/car.jpg",
+        "description": "My first car",
+        "date": "1965",
+        "location": "Washington",
+        "people": [
+            "John Smith"
+        ],
+        "additional_context": {
+            "car_model": "1965 Ford Mustang",
+            "color": "Cherry Red",
+            "memory": "Bought it with my first paycheck from Boeing. My dad was so proud of me"
+        }
+    },
+    "data/car.jpeg": {
+        "image_path": "data/car.jpeg",
+        "description": "My first car",
+        "date": "1965",
+        "location": "Washington",
+        "people": [
+            "John Smith"
+        ],
+        "additional_context": {
+            "car_model": "1965 Ford Mustang",
+            "color": "Cherry Red",
+            "memory": "Bought it with my first paycheck from Boeing. My dad was so proud of me"
+        }
+    },
+    "data/chair.jpeg": {
+        "image_path": "data/chair.jpeg",
+        "description": "Rocking chair memory",
+        "date": "1985",
+        "location": "Washington",
+        "people": [
+            "John Smith Jr."
+        ],
+        "additional_context": {
+            "memory": "First time holding John Jr. in this chair"
+        }
+    }
+}

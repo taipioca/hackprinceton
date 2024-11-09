@@ -1,0 +1,11 @@
+* TODO Gang [0/1]
+- [ ] Object detection [/]
+  - [ ] YOLO just on random objects with random tags
+  - [ ] train on faces (e.g. celebrity detectiion with some scene/table classes?) 
+  - [ ] how to recognize scenes? like a location not just objects? 
+- [ ] RAG [/]
+  - [ ] multi-vector RAG first on any images. Display the image and use the words for context
+  - [ ] multi-vector RAG with images input from object detector 
+
+
+
