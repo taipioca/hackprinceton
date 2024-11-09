@@ -5,50 +5,7 @@ import axios from "axios";
 import UploadModal from "../components/UploadModal";
 import { MemoryItem } from "../pages/types";
 import UpdateModal from "@/components/UpdateModal";
-import DisplayPanel from "@/components/DisplayPanel";
-
-const MemoryBubbles: React.FC<{
-  memories: string[];
-  images: string[];
-}> = ({ memories, images }) => {
-  const [selectedMemory, setSelectedMemory] = useState<number | null>(null);
-
-  return (
-    <div className="relative">
-      <div className="flex flex-wrap gap-4">
-        {images.map((img, idx) => (
-          <div
-            key={idx}
-            className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
-            onClick={() => setSelectedMemory(idx)}
-          >
-            <img
-              src={`data:image/png;base64,${img}`}
-              alt={`Memory ${idx}`}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ))}
-      </div>
-      {selectedMemory !== null && (
-        <div className="absolute top-20 left-0 right-0 bg-white p-4 rounded-lg shadow-lg z-10">
-          <button
-            onClick={() => setSelectedMemory(null)}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-          >
-            ×
-          </button>
-          <img
-            src={`data:image/png;base64,${images[selectedMemory]}`}
-            alt="Selected Memory"
-            className="w-full h-64 object-cover rounded-lg mb-4"
-          />
-          <p className="text-gray-700">{memories[selectedMemory]}</p>
-        </div>
-      )}
-    </div>
-  );
-};
+import FilmRoll from "@/components/FilmRoll";
 
 const MemoryApp: React.FC = () => {
   const [data, setData] = useState<MemoryItem[] | null>(null);
@@ -114,7 +71,7 @@ const MemoryApp: React.FC = () => {
         {data ? (
           data.map((item, index) => (
             <div key={index}>
-              <DisplayPanel data={item} />
+              <FilmRoll data={item} />
             </div>
           ))
         ) : (
