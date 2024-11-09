@@ -5,20 +5,20 @@ import json
 import requests
 import threading
 
-def get_info(query):
-   url = 'http://localhost:5000/get_memory'
-   params = {
-        'name': query 
-    }
-
-   response = requests.get(url, params=params)
-   if response.status_code == 200:
-       return response 
+def generate_and_send_info():
+    
  
 
 model = YOLO('memoRe/best.pt') 
 DETECT_THRESHOLD = 0.8
-last_class = None
+FOCUS_THRESHOLD_FRAMES = 60
+attention = {}
+attention["last_class"] = None
+attention["frame count"] = 0 
+
+last_focus_class = ""
+focused_class = ""
+
 
 cap = cv2.VideoCapture(2)
 while True:
@@ -38,9 +38,23 @@ while True:
             confidence = float(box.conf[0])
 
             # Print the detected class and confidence
-            print(f"Detected: {class_name} (Confidence: {confidence:.2f})")
+            # print(f"Detected: {class_name} (Confidence: {confidence:.2f})")
             if confidence >= DETECT_THRESHOLD:
-                last_class = class_name
+                attention["last_class"] = class_name
+
+            if attention["last_class"] == class_name:
+                attention["frame count"] += 1
+            else:
+                attention["frame count"] = 0
+
+            if attention["frame count"] >= FOCUS_THRESHOLD_FRAMES:
+                focused_class = attention["last_class"]
+
+    if (focused_class != last_focus_class):
+        image_thread = Thread(target=)
+
+
+    print("FOCUSED ON: ", focused_class)
                
  
     # Display the annotated frame
