@@ -4,8 +4,12 @@ import sqlite3
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-import json
-
+# from memoRe import *
+from flask_cors import CORS
+import cv2
+from ultralytics import YOLO
+import numpy as np
+import base64
 # Set up Flask app
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +18,13 @@ CORS(app)
 UPLOAD_FOLDER = 'uploaded_images'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+model = YOLO('memoRe/best.pt') 
+DETECT_THRESHOLD = 0.8
+last_class = None
+
+
+# Endpoint to handle image upload and YOLO detection
 
 # Initialize SQLite database
 def init_db():
@@ -31,8 +42,46 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db()
+# Endpoint for image detection
+@app.route('/detect', methods=['POST'])
+def detect():
+    # Get Base64-encoded image from the request
+    image = ""
+    image_data = request.json.get("image_base64")
+    if not image_data:
+        return jsonify({"status": "error", "message": "No image data provided"}), 400
 
+    # Decode the Base64 image
+    try:
+        image_bytes = base64.b64decode(image_data)
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Invalid image data"}), 400
+
+    np_array = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+    # Perform YOLO object detection
+    results = model(image)
+
+    annotated_frame = results[0].plot()
+
+    detected_objects = []
+    for result in results:
+        boxes = result.boxes
+        for box in boxes:
+            class_id = int(box.cls[0])
+            class_name = result.names[class_id]
+            confidence = float(box.conf[0])
+
+            if confidence >= DETECT_THRESHOLD:
+                detected_objects.append(class_name)
+
+    # Return detected objects
+    if detected_objects:
+        return jsonify({"detected_objects": detected_objects}), 200
+    else:
+        return jsonify({"status": "detecting", "message": "No object detected"}), 200
+    
 # Endpoint to create memory
 @app.route('/create_memory', methods=['POST'])
 def create_memory():
@@ -122,8 +171,6 @@ def dump_memory():
 
     return jsonify(memories_list), 200
 
-from flask_cors import cross_origin
-
 @app.route('/edit_memory/<name>', methods=['PATCH'])
 def edit_memory(name):
     conn = sqlite3.connect('memories.db')
@@ -177,6 +224,37 @@ def edit_memory(name):
 
     return jsonify({"message": "Memory updated successfully"}), 200
 
+@app.route('/get_image_memory', methods=['GET'])
+def get_image_memory():
+    # If no object is detected, return a message
+    if not last_class:
+        return jsonify({"status": "detecting", "message": "No object detected"}), 200
+
+    # Query database for the memory using the detected object class name
+    name = last_class
+
+    conn = sqlite3.connect('memories.db')
+    c = conn.cursor()
+    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (name,))
+    row = c.fetchone()
+    conn.close()
+
+    if row:
+        name, object_type, memories_str, images_str = row
+        memories = memories_str.split('|')
+        images = images_str.split('|')
+        return jsonify({
+            "name": name,
+            "object_type": object_type,
+            "memories": memories,
+            "images": images  # Images are now Base64 encoded strings
+        }), 200
+    else:
+        return jsonify({"status": "error", "message": "Memory not found"}), 404
+
+# Add the object detection logic that sets last_class
+
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True)
