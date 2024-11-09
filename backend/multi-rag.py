@@ -167,9 +167,6 @@ chain = (
     | StrOutputParser()
 )
 
-from IPython.display import HTML, display
-
-
 def save_img_base64(img_base64, save_path="saved_image.jpg"):
     """
     Save a base64-encoded image to a file.
