@@ -9,8 +9,6 @@ def test_change_class(new_class):
     response = requests.post(url, json=payload)
     print(f"POST /change_class with class '{new_class}'")
     print("Status Code:", response.status_code)
-    print("Response JSON:", response.json())
-    print()
 
 def test_get_image_memory():
     url = f'{BASE_URL}/get_image_memory'
@@ -22,5 +20,5 @@ def test_get_image_memory():
 
 if __name__ == "__main__":
     # Test by setting a class name and then fetching the memory
-    test_change_class("Josephine Wang")  # Replace with an actual class name in your database
+    test_change_class("Edward Sun")  # Replace with an actual class name in your database
     test_get_image_memory()
