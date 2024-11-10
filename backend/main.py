@@ -24,7 +24,7 @@ class MemoReRunner:
     def generate_and_send_info(self, query, sg):
         mapping = {"josiewang": "Josephine Wang",
                 "leanntai": "LeAnn Tai",
-                "chaitea": "Chai Tea",
+                "chaitea": "Chai T",
                 "edwardsun": "Edward Sun",
                 "amoxicillin": "Blood pressure medicine"
                 }
