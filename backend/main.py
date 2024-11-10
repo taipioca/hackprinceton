@@ -4,78 +4,93 @@ from ultralytics import YOLO
 import threading
 import requests
 
-model = YOLO('memoRe/best.pt') 
 DETECT_THRESHOLD = 0.8
 FOCUS_THRESHOLD_FRAMES = 60
-attention = {}
-attention["last_class"] = None
-attention["frame count"] = 0 
 
-last_focus_class = ""
-focused_class = ""
 
-sg = StoryGenerator()
-current_thread = None  # Track the current running thread
+class MemoReRunner:
+    def __init__(self):
+        self.model = YOLO('memoRe/best.pt') 
+        self.attention = {}
+        self.attention["last_class"] = None
+        self.attention["frame count"] = 0 
 
-def generate_and_send_info(query, sg):
-    mapping = {"josiewang": "Josephine Wang",
-               "leanntai": "LeAnn Tai",
-               "chaitea": "Chai Tea",
-               "edwardsun": "Edward Sun"}
-    
-    response = requests.post("http://127.0.0.1:5000/change_class", json={"class": mapping[query]})
-    response = response.json()
-    print(response)
-    
-    story = sg.generate_story(response)
-    TTS.generate_eleven_speech(story)
+        self.last_focus_class = ""
+        self.focused_class = ""
 
-cap = cv2.VideoCapture(2)
+        self.sg = StoryGenerator()
+        self.current_thread = None  # Track the current running thread
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    def generate_and_send_info(self, query, sg):
+        mapping = {"josiewang": "Josephine Wang",
+                "leanntai": "LeAnn Tai",
+                "chaitea": "Chai Tea",
+                "edwardsun": "Edward Sun",
+                "amoxicillin": "Blood pressure medicine"
+                }
 
-    results = model(frame)
+        response = requests.post("http://127.0.0.1:5000/change_class", json={"class": mapping[query]})
+        response = response.json()
 
-    annotated_frame = results[0].plot()
+        story = sg.generate_story(response)
+        TTS.generate_eleven_speech(story)
 
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            class_id = int(box.cls[0])
-            class_name = result.names[class_id]
-            confidence = float(box.conf[0])
+        self.last_focus_class = self.focused_class
+        
 
-            if confidence >= DETECT_THRESHOLD:
-                attention["last_class"] = class_name
+    def run(self):
+        cap = cv2.VideoCapture(2)
 
-            if attention["last_class"] == class_name:
-                attention["frame count"] += 1
-            else:
-                attention["frame count"] = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-            if attention["frame count"] >= FOCUS_THRESHOLD_FRAMES:
-                focused_class = attention["last_class"]
+            results = self.model(frame)
 
-    # new focus
-    if focused_class != last_focus_class:
-        last_focus_class = focused_class
-        if current_thread is None or not current_thread.is_alive():
-            current_thread = threading.Thread(target=generate_and_send_info, args=(focused_class, sg,))
-            current_thread.start()
+            annotated_frame = results[0].plot()
 
-    print("FOCUSED ON: ", focused_class)
-               
- 
-    # Display the annotated frame
-    cv2.imshow("YOLOv10 Inference", annotated_frame)
+            for result in results:
+                boxes = result.boxes
+                for box in boxes:
+                    class_id = int(box.cls[0])
+                    class_name = result.names[class_id]
+                    confidence = float(box.conf[0])
 
-    # Break the loop if 'q' is pressed
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+                    if confidence >= DETECT_THRESHOLD:
+                        self.attention["last_class"] = class_name
 
-# Release the webcam and close windows
-cap.release()
-cv2.destroyAllWindows()
+                    if self.attention["last_class"] == class_name:
+                        self.attention["frame count"] += 1
+                    else:
+                        self.attention["frame count"] = 0
+
+                    if self.attention["frame count"] >= FOCUS_THRESHOLD_FRAMES:
+                        # only if thread is not alive, change focus, otherwise finish our current thread
+                        if self.current_thread is not None and not self.current_thread.is_alive():
+                            self.focused_class = self.attention["last_class"]
+                        if self.current_thread is None:
+                            self.focused_class = self.attention["last_class"]
+
+            if self.focused_class != self.last_focus_class:
+                if self.current_thread is None or not self.current_thread.is_alive():
+                    self.current_thread = threading.Thread(target=self.generate_and_send_info, args=(self.focused_class, self.sg,))
+                    self.current_thread.start()
+
+            print("FOCUSED ON: ", self.focused_class)
+
+            # Display the annotated frame
+            cv2.imshow("YOLOv10 Inference", annotated_frame)
+
+            # Break the loop if 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+        # Release the webcam and close windows
+        cap.release()
+        cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    runner_obj = MemoReRunner()
+    runner_obj.run()
