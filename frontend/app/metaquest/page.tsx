@@ -17,7 +17,6 @@ import axios from "axios";
 export default function DetectMemoryPage() {
   const [memoryData, setMemoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -31,17 +30,8 @@ export default function DetectMemoryPage() {
 
             // If audio data exists, decode and play it
             if (response.data.mp3) {
-              print(response.data.mp3)
               const audioData = `data:audio/mp3;base64,${response.data.mp3}`;
               const newAudio = new Audio(audioData);
-
-              // Stop any previous audio before playing new audio
-              if (audio) {
-                audio.pause();
-                audio.currentTime = 0;
-              }
-
-              setAudio(newAudio);
               newAudio.play();
             }
           }
