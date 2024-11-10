@@ -70,7 +70,6 @@ class TTS:
 
     @staticmethod
     def generate_eleven_speech(text="", filename="default.mp3", voice="Jessica"):
-        speech_file_path = os.path.join(OUTPUT_PATH, filename) 
             
         audio = eleven_client.generate(
             text=text,
