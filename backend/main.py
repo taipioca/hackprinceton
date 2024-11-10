@@ -2,6 +2,7 @@ from memoRe import *
 import cv2
 from ultralytics import YOLO
 import threading
+import requests
 
 model = YOLO('memoRe/best.pt') 
 DETECT_THRESHOLD = 0.8
@@ -13,14 +14,20 @@ attention["frame count"] = 0
 last_focus_class = ""
 focused_class = ""
 
-dbr = DataRetriever()
+sg = StoryGenerator()
 current_thread = None  # Track the current running thread
 
-def generate_and_send_info(query, dbr):
-    mapping = {"josiewang": "Josie",
-               "leanntai": "Leann"}
+def generate_and_send_info(query, sg):
+    mapping = {"josiewang": "Josephine Wang",
+               "leanntai": "LeAnn Tai",
+               "chaitea": "Chai Tea",
+               "edwardsun": "Edward Sun"}
     
-    story, _ = dbr.retrieve_memory(mapping[query])
+    response = requests.post("http://127.0.0.1:5000/change_class", json={"class": mapping[query]})
+    response = response.json()
+    print(response)
+    
+    story = sg.generate_story(response)
     TTS.generate_eleven_speech(story)
 
 cap = cv2.VideoCapture(2)
@@ -56,7 +63,7 @@ while True:
     if focused_class != last_focus_class:
         last_focus_class = focused_class
         if current_thread is None or not current_thread.is_alive():
-            current_thread = threading.Thread(target=generate_and_send_info, args=(focused_class, dbr,))
+            current_thread = threading.Thread(target=generate_and_send_info, args=(focused_class, sg,))
             current_thread.start()
 
     print("FOCUSED ON: ", focused_class)

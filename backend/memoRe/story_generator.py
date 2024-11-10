@@ -3,44 +3,25 @@ import json
 from .utils import GPT_prompt, EMPATH_TONE
 import requests
 
-class DataRetriever:
+class StoryGenerator:
     def __init__(self, debug=False):
-        self.people_database = {}
-        self.object_database = {}
         self.debug = debug
 
         if self.debug:
             print("============================DEBUG MODE ON============================")
 
-    def retrieve_memory(self, query):
-        """
-        query is a name for the dictionary, will return:
-        str: summary to do text to speech on
-        list: list of images paths
-        """
+    def generate_story(self, data_json):
 
-        
-        url = 'http://localhost:5000/get_memory'
-        params = {
-                'name': query 
-            }
-
-        response = requests.get(url, params=params)
-        response = response.json()
-
-        print(response)
-
-        name = "" 
-        all_memories = response["memories"]
-        all_img_base64 = response["images"]
-        memory_type = response["object_type"]
+        name = data_json["name"]
+        all_memories = data_json["memories"]
+        memory_type = data_json["object_type"]
 
         system_prompt = f"""{EMPATH_TONE}\nYou are an assistant designed to help dementia patients recall memories. 
                            When provided with a {memory_type}'s name , along with related memory fragments,
                            your task is to create a cohesive story from these fragments.
                            This story should help the patient remember details about the {memory_type}. Be concise and limit your story to around 4 sentances or so."""
 
-        prompt = f"The name of the {memory_type} is: {query}\n\nHere are the memory fragments:\n"
+        prompt = f"The name of the {memory_type} is: {name}\n\nHere are the memory fragments:\n"
         for memory in all_memories:
             prompt += memory + "\n"
 
@@ -50,11 +31,11 @@ class DataRetriever:
             print("------RETRIEVE PROMPT------")
             print(prompt)
             print("------RETRIEVED INFO------")
-            print(f"All retrieved memory fragments for {query}:", str(all_memories))
-            print(f"Generated story {query}:", generated_story)
+            print(f"All retrieved memory fragments for {name}:", str(all_memories))
+            print(f"Generated story {name}:", generated_story)
         
-        return generated_story, all_img_base64
+        return generated_story 
 
 if __name__ == "__main__":
-    dr = DataRetriever(debug=True)
+    dr = StoryGenerator(debug=True)
     dr.retrieve_memory("Leann")
