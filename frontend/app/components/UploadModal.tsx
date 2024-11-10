@@ -62,7 +62,7 @@ const UploadModal: React.FC = () => {
       formData.append("images", file);
     });
 
-    fetch("http://127.0.0.1:5000/create_memory", {
+    fetch("http://10.25.4.161:5000/create_memory", {
       method: "POST",
       body: formData,
     })

@@ -30,7 +30,7 @@ export default function MemoryList() {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://127.0.0.1:5000/dump_memory?type=${filter}`
+        `http://10.25.4.161:5000/dump_memory?type=${filter}`
       );
       setData(response.data);
       setLoading(false);

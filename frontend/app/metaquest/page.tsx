@@ -24,7 +24,7 @@ export default function DetectMemoryPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       axios
-        .get("http://127.0.0.1:5000/get_image_memory")
+        .get("http://10.25.4.161:5000/get_image_memory")
         .then((response: any) => {
           if (response.data.status === "detecting") {
             setMemoryData(null);
