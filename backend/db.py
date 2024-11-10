@@ -66,6 +66,7 @@ def change_class():
         conn.close()
 
         if row:
+            print(row)
             name, object_type, memories_str, images_str = row
             memories = memories_str.split('|')
             images = images_str.split('|')
@@ -79,6 +80,7 @@ def change_class():
             return jsonify({"status": "error", "message": "Memory not found"}), 404
 
     except Exception as e:
+        print(e)
         return jsonify({"status": "error", "message": "Failed to change class"}), 400
 
 @app.route('/get_image_memory', methods=['GET'])
