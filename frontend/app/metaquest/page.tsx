@@ -16,10 +16,19 @@ import axios from "axios";
 
 export default function DetectMemoryPage() {
   const [memoryData, setMemoryData] = useState<any | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null); // Ref to track audio instance
+  const [loading, setLoading] = useState<boolean>(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [detectionActive, setDetectionActive] = useState(false);
+
+  // Function to start detection
+  const startDetection = () => {
+    setDetectionActive(true);
+    setLoading(true);
+  };
 
   useEffect(() => {
+    if (!detectionActive) return; // Exit if detection is not active
+
     const interval = setInterval(() => {
       axios
         .get("http://127.0.0.1:5000/get_image_memory")
@@ -29,14 +38,13 @@ export default function DetectMemoryPage() {
           } else {
             setMemoryData(response.data);
 
-            // If audio data exists, check if audio is already playing
+            // If audio data exists and no audio is playing, start playback
             if (response.data.mp3 && !audioRef.current) {
               const audioData = `data:audio/mp3;base64,${response.data.mp3}`;
               const newAudio = new Audio(audioData);
               audioRef.current = newAudio;
-              newAudio.play();
+              newAudio.play().catch(error => console.error("Audio play failed:", error));
 
-              // Reset audioRef when audio finishes playing
               newAudio.onended = () => {
                 audioRef.current = null;
               };
@@ -51,7 +59,7 @@ export default function DetectMemoryPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [detectionActive]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
@@ -84,7 +92,16 @@ export default function DetectMemoryPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {!detectionActive ? (
+            <div className="text-center space-y-4">
+              <Button onClick={startDetection} className="text-lg font-bold">
+                Start Detection
+              </Button>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Click to start detecting memories.
+              </p>
+            </div>
+          ) : loading ? (
             <div className="flex flex-col items-center space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
               <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
