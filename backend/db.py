@@ -1,8 +1,6 @@
 import os
 import base64
 import sqlite3
-import threading
-import time
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
@@ -15,7 +13,7 @@ CORS(app)
 def init_db():
     conn = sqlite3.connect('memories.db')
     c = conn.cursor()
-    # Main table for memories
+    # Create memories table if not exists
     c.execute('''
         CREATE TABLE IF NOT EXISTS memories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,23 +23,17 @@ def init_db():
             images TEXT
         )
     ''')
-    # Table for storing the last_class
+    # Create settings table to store last_class if not exists
     c.execute('''
-        CREATE TABLE IF NOT EXISTS last_class (
+        CREATE TABLE IF NOT EXISTS settings (
             id INTEGER PRIMARY KEY,
-            name TEXT
+            last_class TEXT
         )
     ''')
-    # Initialize last_class to None if it doesn't exist
-    c.execute("INSERT OR IGNORE INTO last_class (id, name) VALUES (1, NULL)")
-    conn.commit()
-    conn.close()
-
-def reset_last_class():
-    time.sleep(10)  # Wait for 10 seconds
-    conn = sqlite3.connect('memories.db')
-    c = conn.cursor()
-    c.execute("UPDATE last_class SET name = NULL WHERE id = 1")
+    # Insert initial row with last_class set to None if the settings table is empty
+    c.execute('SELECT last_class FROM settings WHERE id = 1')
+    if c.fetchone() is None:
+        c.execute('INSERT INTO settings (id, last_class) VALUES (1, NULL)')
     conn.commit()
     conn.close()
 
@@ -51,55 +43,80 @@ def change_class():
         # Get the new class from the request payload
         new_class = request.json.get("class")
         
-        # Update last_class in the database
+        # Query database to verify the class exists
         conn = sqlite3.connect('memories.db')
         c = conn.cursor()
-        c.execute("UPDATE last_class SET name = ? WHERE id = 1", (new_class,))
-        conn.commit()
+        c.execute('SELECT name FROM memories WHERE name = ?', (new_class,))
+        last_class_row = c.fetchone()
         
-        # Start a timer thread to reset last_class after 10 seconds
-        threading.Thread(target=reset_last_class).start()
+        if last_class_row:
+            # Update last_class in the settings table
+            c.execute('UPDATE settings SET last_class = ? WHERE id = 1', (new_class,))
+            conn.commit()
+            
+            # Fetch memory details
+            c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (new_class,))
+            row = c.fetchone()
 
-        # Fetch memory details for the given class
-        c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (new_class,))
-        row = c.fetchone()
-        conn.close()
-
-        if row:
-            print(row)
-            name, object_type, memories_str, images_str = row
-            memories = memories_str.split('|')
-            images = images_str.split('|')
-            return jsonify({
-                "name": name,
-                "object_type": object_type,
-                "memories": memories,
-                "images": images  # Images are now Base64 encoded strings
-            }), 200
+            if row:
+                name, object_type, memories_str, images_str = row
+                memories = memories_str.split('|')
+                images = images_str.split('|')
+                return jsonify({
+                    "name": name,
+                    "object_type": object_type,
+                    "memories": memories,
+                    "images": images
+                }), 200
         else:
             return jsonify({"status": "error", "message": "Memory not found"}), 404
 
     except Exception as e:
-        print(e)
         return jsonify({"status": "error", "message": "Failed to change class"}), 400
+    finally:
+        conn.close()
 
-@app.route('/get_image_memory', methods=['GET'])
-def get_image_memory():
-    # Query the database for the last_class
+# Endpoint to create memory
+@app.route('/create_memory', methods=['POST'])
+def create_memory():
+    name = request.form.get('name')
+    object_type = request.form.get('object_type')
+    memories = request.form.getlist('memories')
+    memories_str = '|'.join(memories)
+
+    # Encode images to Base64
+    encoded_images = []
+    images = request.files.getlist('images')
+    for image in images:
+        if image:
+            image_stream = image.read()
+            encoded_image = base64.b64encode(image_stream).decode('utf-8')
+            encoded_images.append(encoded_image)
+
+    # Join encoded images with a separator
+    images_str = '|'.join(encoded_images)
+
+    # Insert data into SQLite database
     conn = sqlite3.connect('memories.db')
     c = conn.cursor()
-    c.execute("SELECT name FROM last_class WHERE id = 1")
-    last_class_row = c.fetchone()
+    c.execute('''
+        INSERT INTO memories (name, object_type, memories, images)
+        VALUES (?, ?, ?, ?)
+    ''', (name, object_type, memories_str, images_str))
+    conn.commit()
     conn.close()
 
-    if not last_class_row or not last_class_row[0]:
-        return jsonify({"status": "detecting", "message": "No object detected"}), 200
+    return jsonify({"status": "success", "message": "Memory created successfully!"}), 201
 
-    # Fetch the memory associated with last_class
-    last_class = last_class_row[0]
+# Endpoint to retrieve memory by name
+@app.route('/get_memory', methods=['GET'])
+def get_memory():
+    name = request.args.get('name')
+
+    # Query database
     conn = sqlite3.connect('memories.db')
     c = conn.cursor()
-    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (last_class,))
+    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (name,))
     row = c.fetchone()
     conn.close()
 
@@ -116,7 +133,36 @@ def get_image_memory():
     else:
         return jsonify({"status": "error", "message": "Memory not found"}), 404
 
-# Other endpoints remain unchanged
+# Endpoint to retrieve last class's memory
+@app.route('/get_image_memory', methods=['GET'])
+def get_image_memory():
+    # Retrieve last_class from settings table
+    conn = sqlite3.connect('memories.db')
+    c = conn.cursor()
+    c.execute('SELECT last_class FROM settings WHERE id = 1')
+    last_class_row = c.fetchone()
+    last_class = last_class_row[0] if last_class_row else None
+
+    if not last_class:
+        return jsonify({"status": "detecting", "message": "No object detected"}), 200
+
+    # Query database for the memory using the detected object class name
+    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (last_class,))
+    row = c.fetchone()
+    conn.close()
+
+    if row:
+        name, object_type, memories_str, images_str = row
+        memories = memories_str.split('|')
+        images = images_str.split('|')
+        return jsonify({
+            "name": name,
+            "object_type": object_type,
+            "memories": memories,
+            "images": images
+        }), 200
+    else:
+        return jsonify({"status": "error", "message": "Memory not found"}), 404
 
 if __name__ == '__main__':
     init_db()
