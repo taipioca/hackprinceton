@@ -26,7 +26,7 @@ class MemoReRunner:
                 "amoxicillin": "Blood pressure medicine"
                 }
 
-        response = requests.post("http://<AWS_IP>:<PORT>/change_class", json={"class": mapping[query]})
+        response = requests.post("http://localhost:5000/change_class", json={"class": mapping[query]})
         response = response.json()
 
         story = sg.generate_story(response)

@@ -33,6 +33,11 @@ def init_db():
     conn.commit()
     conn.close()
 
+@app.route('/', methods = ['GET'])
+def hello():
+    return "Welcome to the API"
+
+
 @app.route('/change_class', methods=['POST'])
 def change_class():
     try:
