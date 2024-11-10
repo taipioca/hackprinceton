@@ -7,8 +7,7 @@ langchain-core
 langchain-openai
 opencv-python-headless
 ultralytics
-requests
-openai
+
 python-dotenv
 elevenlabs
 Flask
