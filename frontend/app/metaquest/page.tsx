@@ -44,7 +44,7 @@ export default function DetectMemoryPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [audio]);
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
