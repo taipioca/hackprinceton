@@ -131,7 +131,92 @@ def get_memory():
             "images": images
         }), 200
     else:
-        return jsonify({"status": "error", "message": "Memory not found"}), 404
+        return jsonify({"status": "error", "message": "Memory not found"}), 
+
+# Endpoint to dump all memories
+@app.route('/dump_memory', methods=['GET'])
+def dump_memory():
+    filter_type = request.args.get('type', 'all')
+
+    # Query database for all memory entries
+    conn = sqlite3.connect('memories.db')
+    c = conn.cursor()
+
+    if filter_type == 'all':
+        c.execute('SELECT name, object_type, memories, images FROM memories')
+    else:
+        c.execute('SELECT name, object_type, memories, images FROM memories WHERE object_type = ?', (filter_type,))
+
+    rows = c.fetchall()
+    conn.close()
+
+    # Prepare all data
+    memories_list = []
+    for row in rows:
+        name, object_type, memories_str, images_str = row
+        memories = memories_str.split('|')
+        images = images_str.split('|')
+        memories_list.append({
+            "name": name,
+            "object_type": object_type,
+            "memories": memories,
+            "images": images  # Images are now Base64 encoded strings
+        })
+
+    return jsonify(memories_list), 200
+
+@app.route('/edit_memory/<name>', methods=['PATCH'])
+def edit_memory(name):
+    conn = sqlite3.connect('memories.db')
+    cursor = conn.cursor()
+
+    # Retrieve the current memory data by name
+    cursor.execute("SELECT * FROM memories WHERE name = ?", (name,))
+    memory = cursor.fetchone()
+
+    if not memory:
+        return jsonify({"error": "Memory not found"}), 404
+
+    # Parse the existing data
+    memory_id, current_name, current_object_type, current_memories, current_images = memory
+
+    # Get the new data from the request
+    data = request.form
+
+    # Handle the new memories (split by | when updating)
+    new_memories = data.get('memories')
+    if new_memories:
+        # Split the memories string into a list by '|'
+        new_memories = new_memories.split('|')
+
+    # Handle the new images
+    new_images = request.files.getlist('images')
+
+    # Decode the existing images (Base64) from the database into a list
+    existing_images = current_images.split('|') if current_images else []
+
+    # Update the images (replacing old ones) and base64 encode them
+    updated_images = existing_images  # start with existing images
+    if new_images:
+        for image in new_images:
+            image_data = image.read()
+            encoded_image = base64.b64encode(image_data).decode('utf-8')
+            updated_images.append(encoded_image)
+
+    # Prepare the updated data
+    updated_memories = new_memories if new_memories else current_memories
+
+    # Update the database with new data
+    cursor.execute('''
+        UPDATE memories
+        SET object_type = ?, memories = ?, images = ?
+        WHERE name = ?
+    ''', (data.get('object_type', current_object_type), '|'.join(updated_memories), '|'.join(updated_images), name))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Memory updated successfully"}), 200
 
 # Endpoint to retrieve last class's memory
 @app.route('/get_image_memory', methods=['GET'])
