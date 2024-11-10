@@ -254,7 +254,7 @@ def get_image_memory():
     images = images_str.split('|')
 
     # Retrieve the associated MP3 file from the mp3_files table
-    c.execute('SELECT mp3 FROM mp3_files WHERE class_name = ?', (last_class,))
+    c.execute('SELECT encoded_mp3 FROM audio_files WHERE id = 1')
     mp3_row = c.fetchone()
     mp3_str = mp3_row[0] if mp3_row else None
 

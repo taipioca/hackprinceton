@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import axios from "axios";
 export default function DetectMemoryPage() {
   const [memoryData, setMemoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null); // Ref to track audio instance
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -28,11 +29,17 @@ export default function DetectMemoryPage() {
           } else {
             setMemoryData(response.data);
 
-            // If audio data exists, decode and play it
-            if (response.data.mp3) {
+            // If audio data exists, check if audio is already playing
+            if (response.data.mp3 && !audioRef.current) {
               const audioData = `data:audio/mp3;base64,${response.data.mp3}`;
               const newAudio = new Audio(audioData);
+              audioRef.current = newAudio;
               newAudio.play();
+
+              // Reset audioRef when audio finishes playing
+              newAudio.onended = () => {
+                audioRef.current = null;
+              };
             }
           }
           setLoading(false);
