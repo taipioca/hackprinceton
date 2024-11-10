@@ -1,11 +1,16 @@
 from pathlib import Path
 from openai import OpenAI
 import os
+from dotenv import load_dotenv
 from elevenlabs import play, save
 from elevenlabs.client import ElevenLabs
 
+# Load environment variables from the .env file
+load_dotenv()
+
+# Retrieve API keys from environment
 openai_client = OpenAI()
-eleven_client = ElevenLabs(api_key=os.environ.get("ELEVEN_API_KEY"))
+eleven_client = ElevenLabs(api_key=os.getenv("ELEVEN_API_KEY"))
 
 OUTPUT_PATH = "./data/speech"
 
@@ -20,7 +25,6 @@ class TTS:
             input=text,
         ) as response:
             response.stream_to_file(speech_file_path)
-
 
     @staticmethod
     def generate_eleven_speech_file(text="", filename="default.mp3", voice="Jessica"):
