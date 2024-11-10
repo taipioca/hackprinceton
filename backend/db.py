@@ -2,7 +2,6 @@ import os
 import base64
 import sqlite3
 from flask import Flask, request, jsonify
-from werkzeug.utils import secure_filename
 from flask_cors import CORS
 
 # Set up Flask app
