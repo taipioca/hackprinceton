@@ -1,11 +1,18 @@
 from pathlib import Path
 from openai import OpenAI
 import os
+from dotenv import load_dotenv
+import base64
+import sqlite3
 from elevenlabs import play, save
 from elevenlabs.client import ElevenLabs
 
+# Load environment variables from the .env file
+load_dotenv()
+
+# Retrieve API keys from environment
 openai_client = OpenAI()
-eleven_client = ElevenLabs(api_key=os.environ.get("ELEVEN_API_KEY"))
+eleven_client = ElevenLabs(api_key=os.getenv("ELEVEN_API_KEY"))
 
 OUTPUT_PATH = "./data/speech"
 
@@ -21,7 +28,6 @@ class TTS:
         ) as response:
             response.stream_to_file(speech_file_path)
 
-
     @staticmethod
     def generate_eleven_speech_file(text="", filename="default.mp3", voice="Jessica"):
         speech_file_path = os.path.join(OUTPUT_PATH, filename) 
@@ -33,6 +39,34 @@ class TTS:
         )
 
         save(audio, speech_file_path)
+        with open(speech_file_path, "rb") as mp3_file:
+            encoded_mp3 = base64.b64encode(mp3_file.read()).decode('utf-8')
+
+        conn = sqlite3.connect('memories.db')
+        c = conn.cursor()
+
+        # Check if an MP3 file with the same filename exists
+        c.execute('SELECT id FROM audio_files WHERE filename = ?', (filename,))
+        existing_audio = c.fetchone()
+
+        if existing_audio:
+            # If it exists, update the existing entry
+            c.execute('''
+                UPDATE audio_files
+                SET encoded_mp3 = ?
+                WHERE filename = ?
+            ''', (encoded_mp3, filename))
+        else:
+            # If not, insert a new entry
+            c.execute('''
+                INSERT INTO audio_files (filename, encoded_mp3)
+                VALUES (?, ?)
+            ''', (filename, encoded_mp3))
+
+        conn.commit()
+        conn.close()
+
+        return {"status": "success", "message": f"MP3 file '{filename}' saved successfully!"}
 
     @staticmethod
     def generate_eleven_speech(text="", filename="default.mp3", voice="Jessica"):

@@ -1,9 +1,18 @@
 import base64
 from PIL import Image
 import io
-from openai import OpenAI
+import openai
+from dotenv import load_dotenv
+import os
 
-client = OpenAI()
+# Load environment variables from the .env file
+load_dotenv()
+
+# Retrieve OpenAI API key from the environment
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# Initialize OpenAI client with the API key
+openai.api_key = openai_api_key
 
 EMPATH_TONE = """
 Here's some information on your tone/style:
@@ -35,14 +44,12 @@ def save_img_base64(img_base64, save_path="saved_image.jpg"):
     img = Image.open(io.BytesIO(img_data))
     img.save(save_path)
 
-        
-
 def GPT_prompt(system_prompt, query):
     sys_prompt = system_prompt 
 
-    completion = client.chat.completions.create(
+    completion = openai.ChatCompletion.create(
                     model="gpt-4o-mini",
                     temperature=0.4,
                     messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": query}])
 
-    return completion.choices[0].message.content
+    return completion.choices[0].message['content']
