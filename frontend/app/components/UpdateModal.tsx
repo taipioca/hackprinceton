@@ -21,7 +21,7 @@ import {
 } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { useForm } from "react-hook-form";
-import { PlusCircle, X } from "lucide-react";
+import { PencilIcon, PlusCircle, X } from "lucide-react";
 
 export interface MemoryItem {
   type: "person" | "object";
@@ -121,6 +121,7 @@ const UpdateModal: React.FC = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="secondary" className="tracking-tight">
+          <PencilIcon />
           edit a past memory
         </Button>
       </DialogTrigger>

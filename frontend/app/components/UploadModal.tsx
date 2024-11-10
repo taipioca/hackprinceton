@@ -79,7 +79,10 @@ const UploadModal: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="tracking-tight">create a new memory!</Button>
+        <Button className="tracking-tight">
+          <PlusCircle />
+          create a new memory!
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
