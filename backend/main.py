@@ -29,16 +29,16 @@ class MemoReRunner:
                 "amoxicillin": "Blood pressure medicine"
                 }
 
-        response = requests.post("http://127.0.0.1:5000/change_class", json={"class": mapping[query]})
+        response = requests.post("http://10.25.4.161:5000/change_class", json={"class": mapping[query]})
         response = response.json()
 
         story = sg.generate_story(response)
         TTS.generate_eleven_speech_file(story)
 
-        self.last_focus_class = self.focused_clas
+        self.last_focus_class = self.focused_class
         
     def run(self):
-        cap = cv2.VideoCapture(2)
+        cap = cv2.VideoCapture(0)
 
         while True:
             ret, frame = cap.read()
@@ -363,7 +363,7 @@ def get_image_memory():
 
 if __name__ == '__main__':
     init_db()
-    db_thread = threading.Thread(target=app.run)
+    db_thread = threading.Thread(target=app.run, kwargs={"host": "10.25.4.161", "port": 5000})
     runner_obj = MemoReRunner()
     runner_thread = threading.Thread(target=runner_obj.run)
     db_thread.start()
