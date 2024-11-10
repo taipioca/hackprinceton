@@ -23,6 +23,14 @@ def init_db():
             images TEXT
         )
     ''')
+    # Create audio_files table to store base64-encoded MP3 files
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS audio_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT,
+            encoded_mp3 TEXT
+        )
+    ''')
     # Create settings table to store last_class if not exists
     c.execute('''
         CREATE TABLE IF NOT EXISTS settings (
@@ -218,37 +226,50 @@ def edit_memory(name):
 
     return jsonify({"message": "Memory updated successfully"}), 200
 
-# Endpoint to retrieve last class's memory
 @app.route('/get_image_memory', methods=['GET'])
 def get_image_memory():
-    # Retrieve last_class from settings table
+    # Connect to the database
     conn = sqlite3.connect('memories.db')
     c = conn.cursor()
+
+    # Retrieve last_class from settings table
     c.execute('SELECT last_class FROM settings WHERE id = 1')
     last_class_row = c.fetchone()
     last_class = last_class_row[0] if last_class_row else None
     print(last_class)
 
     if not last_class:
+        conn.close()
         return jsonify({"status": "detecting", "message": "No object detected"}), 200
 
-    # Query database for the memory using the detected object class name
+    # Query the memories table for the details of the last_class
     c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (last_class,))
     row = c.fetchone()
+
+    if not row:
+        conn.close()
+        return jsonify({"status": "error", "message": "Memory not found"}), 404
+
+    name, object_type, memories_str, images_str = row
+    memories = memories_str.split('|')
+    images = images_str.split('|')
+
+    # Retrieve the associated MP3 file from the mp3_files table
+    c.execute('SELECT mp3 FROM mp3_files WHERE class_name = ?', (last_class,))
+    mp3_row = c.fetchone()
+    mp3_str = mp3_row[0] if mp3_row else None
+
     conn.close()
 
-    if row:
-        name, object_type, memories_str, images_str = row
-        memories = memories_str.split('|')
-        images = images_str.split('|')
-        return jsonify({
-            "name": name,
-            "object_type": object_type,
-            "memories": memories,
-            "images": images
-        }), 200
-    else:
-        return jsonify({"status": "error", "message": "Memory not found"}), 404
+    # Construct the JSON response with the retrieved data
+    return jsonify({
+        "name": name,
+        "object_type": object_type,
+        "memories": memories,
+        "images": images,
+        "mp3": mp3_str  # Include the Base64 encoded MP3 if it exists
+    }), 200
+
 
 if __name__ == '__main__':
     init_db()

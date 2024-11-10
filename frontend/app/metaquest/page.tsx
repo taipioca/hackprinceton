@@ -14,11 +14,10 @@ import { Button } from "../components/ui/button";
 import Image from "next/image";
 import axios from "axios";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 export default function DetectMemoryPage() {
   const [memoryData, setMemoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,6 +28,21 @@ export default function DetectMemoryPage() {
             setMemoryData(null);
           } else {
             setMemoryData(response.data);
+
+            // If audio data exists, decode and play it
+            if (response.data.mp3) {
+              const audioData = `data:audio/mp3;base64,${response.data.mp3}`;
+              const newAudio = new Audio(audioData);
+
+              // Stop any previous audio before playing new audio
+              if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+              }
+
+              setAudio(newAudio);
+              newAudio.play();
+            }
           }
           setLoading(false);
         })
@@ -39,7 +53,7 @@ export default function DetectMemoryPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [audio]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
