@@ -4,15 +4,11 @@ import sqlite3
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-# from memoRe import *
-from flask_cors import CORS
-import base64
+from flask import g
+
 # Set up Flask app
 app = Flask(__name__)
 CORS(app)
-
-global last_class
-last_class = None
 
 # Initialize SQLite database
 def init_db():
@@ -29,8 +25,6 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    
-from flask import g
 
 @app.route('/change_class', methods=['POST'])
 def change_class():
@@ -39,27 +33,35 @@ def change_class():
         new_class = request.json.get("class")
         print('new class', new_class)
         
-        # Update the global last_class
-        g.last_class = new_class
-        
-        # Query database
+        # Query database and set g.last_class
         conn = sqlite3.connect('memories.db')
         c = conn.cursor()
-        c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (last_class,))
-        row = c.fetchone()
+        c.execute('SELECT name FROM memories WHERE name = ?', (new_class,))
+        last_class_row = c.fetchone()
         conn.close()
-
-        if row:
-            name, object_type, memories_str, images_str = row
-            memories = memories_str.split('|')
-            images = images_str.split('|')
-            return jsonify({
-                "name": name,
-                "object_type": object_type,
-                "memories": memories,
-                "images": images  # Images are now Base64 encoded strings
-            }), 200
         
+        if last_class_row:
+            g.last_class = last_class_row[0]
+            # Fetch memory details
+            conn = sqlite3.connect('memories.db')
+            c = conn.cursor()
+            c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (g.last_class,))
+            row = c.fetchone()
+            conn.close()
+
+            if row:
+                name, object_type, memories_str, images_str = row
+                memories = memories_str.split('|')
+                images = images_str.split('|')
+                return jsonify({
+                    "name": name,
+                    "object_type": object_type,
+                    "memories": memories,
+                    "images": images  # Images are now Base64 encoded strings
+                }), 200
+        else:
+            return jsonify({"status": "error", "message": "Memory not found"}), 404
+
     except Exception as e:
         return jsonify({"status": "error", "message": "Failed to change class"}), 400
     
@@ -69,7 +71,7 @@ def create_memory():
     name = request.form.get('name')
     object_type = request.form.get('object_type')
     memories = request.form.getlist('memories')
-    memories_str = '|'.join(memories)  # Concatenate memories list for storage
+    memories_str = '|'.join(memories)
 
     # Encode images to Base64
     encoded_images = []
@@ -115,7 +117,7 @@ def get_memory():
             "name": name,
             "object_type": object_type,
             "memories": memories,
-            "images": images  # Images are now Base64 encoded strings
+            "images": images
         }), 200
     else:
         return jsonify({"status": "error", "message": "Memory not found"}), 404
@@ -147,7 +149,7 @@ def dump_memory():
             "name": name,
             "object_type": object_type,
             "memories": memories,
-            "images": images  # Images are now Base64 encoded strings
+            "images": images
         })
 
     return jsonify(memories_list), 200
@@ -173,7 +175,6 @@ def edit_memory(name):
     # Handle the new memories (split by | when updating)
     new_memories = data.get('memories')
     if new_memories:
-        # Split the memories string into a list by '|'
         new_memories = new_memories.split('|')
 
     # Handle the new images
@@ -183,7 +184,7 @@ def edit_memory(name):
     existing_images = current_images.split('|') if current_images else []
 
     # Update the images (replacing old ones) and base64 encode them
-    updated_images = existing_images  # start with existing images
+    updated_images = existing_images
     if new_images:
         for image in new_images:
             image_data = image.read()
@@ -207,16 +208,17 @@ def edit_memory(name):
 
 @app.route('/get_image_memory', methods=['GET'])
 def get_image_memory():
-    name = g.last_class
-    print(name)
-    # If no object is detected, return a message
-    if not name:
+    # Access last_class from g (set in change_class endpoint)
+    last_class = g.get("last_class", None)
+    print(last_class)
+    
+    if not last_class:
         return jsonify({"status": "detecting", "message": "No object detected"}), 200
 
     # Query database for the memory using the detected object class name
     conn = sqlite3.connect('memories.db')
     c = conn.cursor()
-    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (name,))
+    c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (last_class,))
     row = c.fetchone()
     conn.close()
 
@@ -228,13 +230,12 @@ def get_image_memory():
             "name": name,
             "object_type": object_type,
             "memories": memories,
-            "images": images  # Images are now Base64 encoded strings
+            "images": images
         }), 200
     else:
         return jsonify({"status": "error", "message": "Memory not found"}), 404
 
 # Add the object detection logic that sets last_class
-
 
 if __name__ == '__main__':
     init_db()
