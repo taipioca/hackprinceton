@@ -34,9 +34,19 @@ export default function DetectMemoryPage() {
             // If new audio data exists and differs from previous audio, play it
             if (response.data.mp3 && response.data.mp3 !== prevAudioData) {
               const audioData = `data:audio/mp3;base64,${response.data.mp3}`;
+
+              // Create a new Audio instance only if there's new audio data
               const newAudio = new Audio(audioData);
               newAudio.play();
+
+              // Update the previous audio data
               setPrevAudioData(response.data.mp3);
+
+              // Ensure audio plays only once, handling onended if needed
+              newAudio.onended = () => {
+                newAudio.pause();
+                newAudio.currentTime = 0; // Reset the audio for next play
+              };
             }
           }
           setAudioLoading(false);
