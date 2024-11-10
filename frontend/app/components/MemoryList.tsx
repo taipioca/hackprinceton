@@ -108,8 +108,8 @@ function MemoryGrid({ items }: { items: MemoryItem[] }) {
           </CardHeader>
           <CardContent className="p-0">
             <h3 className="mb-2 p-4">My Memories</h3>
-            <ScrollArea className="h-40 p-4">
-              <div className="grid grid-cols-3 gap-2">
+            <ScrollArea className="h-40 p-4 overflow-x-auto">
+              <div className="flex gap-2">
                 {item.images.map((img, idx) => (
                   <div
                     key={idx}
@@ -118,7 +118,7 @@ function MemoryGrid({ items }: { items: MemoryItem[] }) {
                     <img
                       src={`data:image/png;base64,${img}`}
                       alt={`Image ${idx + 1} of ${item.name}`}
-                      className="object-cover w-full h-full"
+                      className="object-cover w-32 h-32"
                     />
                   </div>
                 ))}
