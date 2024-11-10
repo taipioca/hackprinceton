@@ -6,26 +6,13 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS
 # from memoRe import *
 from flask_cors import CORS
-import cv2
-from ultralytics import YOLO
-import numpy as np
 import base64
 # Set up Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Create folder to save uploaded images (optional if not saving images as files)
-UPLOAD_FOLDER = 'uploaded_images'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-model = YOLO('memoRe/best.pt') 
-DETECT_THRESHOLD = 0.8
 global last_class
 last_class = None
-
-
-# Endpoint to handle image upload and YOLO detection
 
 # Initialize SQLite database
 def init_db():
@@ -42,16 +29,18 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    
+from flask import g
 
 @app.route('/change_class', methods=['POST'])
 def change_class():
-    print(last_class)
     try:
         # Get the new class from the request payload
         new_class = request.json.get("class")
+        print('new class', new_class)
         
         # Update the global last_class
-        last_class = new_class
+        g.last_class = new_class
         
         # Query database
         conn = sqlite3.connect('memories.db')
@@ -73,47 +62,6 @@ def change_class():
         
     except Exception as e:
         return jsonify({"status": "error", "message": "Failed to change class"}), 400
-    
-
-# Endpoint for image detection
-@app.route('/detect', methods=['POST'])
-def detect():
-    # Get Base64-encoded image from the request
-    image = ""
-    image_data = request.json.get("image_base64")
-    if not image_data:
-        return jsonify({"status": "error", "message": "No image data provided"}), 400
-
-    # Decode the Base64 image
-    try:
-        image_bytes = base64.b64decode(image_data)
-        
-    except Exception as e:
-        return jsonify({"status": "error", "message": "Invalid image data"}), 400
-
-    np_array = np.frombuffer(image_bytes, np.uint8)
-    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-    # Perform YOLO object detection
-    results = model(image)
-
-    annotated_frame = results[0].plot()
-
-    detected_objects = []
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            class_id = int(box.cls[0])
-            class_name = result.names[class_id]
-            confidence = float(box.conf[0])
-
-            if confidence >= DETECT_THRESHOLD:
-                detected_objects.append(class_name)
-
-    # Return detected objects
-    if detected_objects:
-        return jsonify({"detected_objects": detected_objects}), 200
-    else:
-        return jsonify({"status": "detecting", "message": "No object detected"}), 200
     
 # Endpoint to create memory
 @app.route('/create_memory', methods=['POST'])
@@ -259,14 +207,13 @@ def edit_memory(name):
 
 @app.route('/get_image_memory', methods=['GET'])
 def get_image_memory():
-    print(last_class)
+    name = g.last_class
+    print(name)
     # If no object is detected, return a message
-    if not last_class:
+    if not name:
         return jsonify({"status": "detecting", "message": "No object detected"}), 200
 
     # Query database for the memory using the detected object class name
-    name = last_class
-
     conn = sqlite3.connect('memories.db')
     c = conn.cursor()
     c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (name,))
