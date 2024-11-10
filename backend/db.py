@@ -52,7 +52,23 @@ def change_class():
         # Update the global last_class
         last_class = new_class
         
-        return jsonify({"status": "success", "message": f"Object detected: {last_class}"}), 200
+        # Query database
+        conn = sqlite3.connect('memories.db')
+        c = conn.cursor()
+        c.execute('SELECT name, object_type, memories, images FROM memories WHERE name = ?', (last_class,))
+        row = c.fetchone()
+        conn.close()
+
+        if row:
+            name, object_type, memories_str, images_str = row
+            memories = memories_str.split('|')
+            images = images_str.split('|')
+            return jsonify({
+                "name": name,
+                "object_type": object_type,
+                "memories": memories,
+                "images": images  # Images are now Base64 encoded strings
+            }), 200
         
     except Exception as e:
         return jsonify({"status": "error", "message": "Failed to change class"}), 400
