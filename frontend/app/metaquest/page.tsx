@@ -31,6 +31,7 @@ export default function DetectMemoryPage() {
 
             // If audio data exists, decode and play it
             if (response.data.mp3) {
+              print(response.data.mp3)
               const audioData = `data:audio/mp3;base64,${response.data.mp3}`;
               const newAudio = new Audio(audioData);
 
