@@ -3,7 +3,11 @@
 import MemoryList from "@/app/components/MemoryList";
 
 const App = () => {
-  return <MemoryList />;
+  return (
+    <div className="p-8">
+      <MemoryList />
+    </div>
+  );
 };
 
 export default App;
