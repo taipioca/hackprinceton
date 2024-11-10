@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { ScrollArea } from "../components/ui/scroll-area";
-import { Cloud, Home, Loader2 } from "lucide-react";
+import { Cloud, Home, Loader2, LoaderPinwheel } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../components/ui/button";
 import Image from "next/image";
@@ -18,6 +18,8 @@ export default function DetectMemoryPage() {
   const [memoryData, setMemoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [prevAudioData, setPrevAudioData] = useState<string | null>(null);
+
+  const [audioLoading, setAudioLoading] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,11 +39,13 @@ export default function DetectMemoryPage() {
               setPrevAudioData(response.data.mp3);
             }
           }
+          setAudioLoading(false);
           setLoading(false);
         })
         .catch((error: any) => {
           console.error("Error fetching data", error);
           setLoading(false);
+          setAudioLoading(false);
         });
     }, 1000);
 
@@ -132,6 +136,11 @@ export default function DetectMemoryPage() {
                 </div>
               </div>
             </div>
+          )}
+          {audioLoading && (
+            <span className="flex items-center justify-center gap-2 flex-col">
+              <LoaderPinwheel /> Converting Memories to text!
+            </span>
           )}
         </CardContent>
       </Card>
