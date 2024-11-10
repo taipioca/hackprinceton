@@ -45,6 +45,7 @@ def init_db():
 @app.route('/change_class', methods=['POST'])
 def change_class():
     global last_class  # Declare last_class as a global variable
+    print(last_class)
     try:
         # Get the new class from the request payload
         new_class = request.json.get("class")
@@ -258,6 +259,8 @@ def edit_memory(name):
 
 @app.route('/get_image_memory', methods=['GET'])
 def get_image_memory():
+    global last_class
+    print(last_class)
     # If no object is detected, return a message
     if not last_class:
         return jsonify({"status": "detecting", "message": "No object detected"}), 200
