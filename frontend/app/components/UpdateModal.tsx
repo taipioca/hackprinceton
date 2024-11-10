@@ -51,7 +51,7 @@ const UpdateModal: React.FC = () => {
 
   useEffect(() => {
     if (open) {
-      fetch("http://127.0.0.1:5000/dump_memory")
+      fetch("http://10.25.4.161:5000/dump_memory")
         .then((res) => res.json())
         .then((memories) => {
           const filteredFiles = memories
@@ -65,7 +65,7 @@ const UpdateModal: React.FC = () => {
 
   useEffect(() => {
     if (selectedFile) {
-      fetch(`http://127.0.0.1:5000/get_memory?name=${selectedFile}`)
+      fetch(`http://10.25.4.161:5000/get_memory?name=${selectedFile}`)
         .then((res) => res.json())
         .then((data) => {
           setData(data);
@@ -85,7 +85,7 @@ const UpdateModal: React.FC = () => {
       formDataToSend.append("images", file);
     });
 
-    fetch(`http://127.0.0.1:5000/edit_memory/${formData.name}`, {
+    fetch(`http://10.25.4.161:5000/edit_memory/${formData.name}`, {
       method: "PATCH",
       body: formDataToSend,
     })
