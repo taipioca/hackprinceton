@@ -227,6 +227,7 @@ def get_image_memory():
     c.execute('SELECT last_class FROM settings WHERE id = 1')
     last_class_row = c.fetchone()
     last_class = last_class_row[0] if last_class_row else None
+    print(last_class)
 
     if not last_class:
         return jsonify({"status": "detecting", "message": "No object detected"}), 200
