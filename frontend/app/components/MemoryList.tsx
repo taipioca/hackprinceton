@@ -9,7 +9,7 @@ import UpdateModal from "./UpdateModal";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Circle, CircleAlert, Home } from "lucide-react";
+import { Circle, CircleAlert, Home, X } from "lucide-react";
 
 export interface MemoryItem {
   type: "person" | "object";
@@ -89,6 +89,8 @@ export default function MemoryList() {
 }
 
 function MemoryGrid({ items }: { items: MemoryItem[] }) {
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((item, index) => (
@@ -113,7 +115,8 @@ function MemoryGrid({ items }: { items: MemoryItem[] }) {
                 {item.images.map((img, idx) => (
                   <div
                     key={idx}
-                    className="relative aspect-square overflow-hidden rounded-md"
+                    className="relative aspect-square overflow-hidden rounded-md cursor-pointer"
+                    onClick={() => setExpandedImage(img)}
                   >
                     <img
                       src={`data:image/png;base64,${img}`}
@@ -138,6 +141,24 @@ function MemoryGrid({ items }: { items: MemoryItem[] }) {
           </CardContent>
         </Card>
       ))}
+      {expandedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="relative bg-white rounded-lg shadow-xl p-4">
+            <img
+              src={`data:image/png;base64,${expandedImage}`}
+              alt="Expanded memory"
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setExpandedImage(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 bg-white rounded-full p-1"
+              aria-label="Close"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
